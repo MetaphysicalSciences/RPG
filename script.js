@@ -1,107 +1,108 @@
-const canvas = document.getElementById('canvas');
-const ctx    = canvas.getContext('2d');
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 
-// Character position
-let pos = { x: 376, y: 268 };
+const FRAME_WIDTH = 48;
+const FRAME_HEIGHT = 64;
+const FRAME_COUNT = 8;
+const SPEED = 2;
 
-// Input state
-let keys = { ArrowUp:0, ArrowDown:0, ArrowLeft:0, ArrowRight:0 };
-
-// Load all eight images
-const images = {};
-const actions = [
-  'IdleFront','IdleBack','IdleLeft','IdleRight',
-  'WalkFront','WalkBack','WalkLeft','WalkRight'
-];
-actions.forEach(name => {
-  const img = new Image();
-  img.src = name + '.png';
-  images[name] = img;
-});
-
-// Animation state
-let state = {
-  action: 'IdleFront',   // matches a key in `images`
-  frame: 0
+const directions = ["Front", "Back", "Left", "Right"];
+const player = {
+  x: canvas.width / 2 - FRAME_WIDTH / 2,
+  y: canvas.height / 2 - FRAME_HEIGHT / 2,
+  dir: "Front",
+  frame: 0,
+  frameTimer: 0,
+  frameDelay: 100,
+  moving: false,
 };
 
-const SPRITE = { w:48, h:64, frames:6 };
-const SPEED  = 2;
+const keys = {
+  ArrowUp: false,
+  ArrowDown: false,
+  ArrowLeft: false,
+  ArrowRight: false,
+};
 
-// Key handlers
-document.addEventListener('keydown', e => {
-  if (e.key in keys) keys[e.key] = 1;
-});
-document.addEventListener('keyup', e => {
-  if (e.key in keys) keys[e.key] = 0;
-});
+const sprites = {};
 
-// Advance animation frame every 100ms
-setInterval(() => {
-  state.frame = (state.frame + 1) % SPRITE.frames;
-}, 100);
+function loadImages(callback) {
+  let loaded = 0;
+  const total = directions.length * 2;
+  directions.forEach((dir) => {
+    ["Idle", "Walk"].forEach((state) => {
+      const key = state + dir;
+      const img = new Image();
+      img.onload = () => {
+        loaded++;
+        if (loaded === total) callback();
+      };
+      img.src = `${key}.png`;
+      sprites[key] = img;
+    });
+  });
+}
 
-function update() {
-  // Determine movement
-  let dx = keys.ArrowRight - keys.ArrowLeft;
-  let dy = keys.ArrowDown  - keys.ArrowUp;
-  let moving = dx !== 0 || dy !== 0;
+function update(delta) {
+  let dx = 0, dy = 0;
 
-  // Decide facing
-  let face;
-  if      (dy <  0) face = 'Back';
-  else if (dy >  0) face = 'Front';
-  else if (dx <  0) face = 'Left';
-  else if (dx >  0) face = 'Right';
-  else {
-    // keep last face (strip “Idle|Walk” from action)
-    face = state.action.replace(/^Idle|Walk/, '');
-  }
+  if (keys.ArrowUp) dy -= 1;
+  if (keys.ArrowDown) dy += 1;
+  if (keys.ArrowLeft) dx -= 1;
+  if (keys.ArrowRight) dx += 1;
 
-  // Decide new action
-  let act = (moving ? 'Walk' : 'Idle') + face;
-  if (act !== state.action) {
-    state.action = act;
-    state.frame  = 0;
-  }
+  player.moving = dx !== 0 || dy !== 0;
 
-  // Move
-  if (moving) {
-    pos.x += dx * SPEED;
-    pos.y += dy * SPEED;
-    // clamp
-    pos.x = Math.max(0, Math.min(800 - SPRITE.w, pos.x));
-    pos.y = Math.max(0, Math.min(600 - SPRITE.h, pos.y));
+  if (dy < 0) player.dir = "Back";
+  else if (dy > 0) player.dir = "Front";
+  else if (dx < 0) player.dir = "Left";
+  else if (dx > 0) player.dir = "Right";
+
+  if (player.moving) {
+    player.x += dx * SPEED;
+    player.y += dy * SPEED;
+    player.frameTimer += delta;
+    if (player.frameTimer >= player.frameDelay) {
+      player.frame = (player.frame + 1) % FRAME_COUNT;
+      player.frameTimer = 0;
+    }
+  } else {
+    player.frame = 0;
   }
 }
 
 function draw() {
-  // clear entire game‐canvas region around our sprite
-  // (we could optimize to only clear the old rect, but this is fine)
-  ctx.clearRect(0, 0, SPRITE.w, SPRITE.h);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // draw the current frame from the current image
-  const img = images[state.action];
+  const action = (player.moving ? "Walk" : "Idle") + player.dir;
+  const sprite = sprites[action];
+
   ctx.drawImage(
-    img,
-    state.frame * SPRITE.w,  // source x
-    0,                       // source y
-    SPRITE.w,                // source w
-    SPRITE.h,                // source h
-    0, 0,                    // dest x,y in canvas
-    SPRITE.w, SPRITE.h       // dest w,h
+    sprite,
+    player.frame * FRAME_WIDTH, 0,
+    FRAME_WIDTH, FRAME_HEIGHT,
+    player.x, player.y,
+    FRAME_WIDTH, FRAME_HEIGHT
   );
-
-  // reposition the canvas element in the DOM
-  canvas.style.left = pos.x + 'px';
-  canvas.style.top  = pos.y + 'px';
 }
 
-function loop() {
-  update();
+let lastTime = 0;
+function loop(timestamp) {
+  const delta = timestamp - lastTime;
+  lastTime = timestamp;
+
+  update(delta);
   draw();
   requestAnimationFrame(loop);
 }
 
-// start
-loop();
+document.addEventListener("keydown", (e) => {
+  if (e.key in keys) keys[e.key] = true;
+});
+document.addEventListener("keyup", (e) => {
+  if (e.key in keys) keys[e.key] = false;
+});
+
+loadImages(() => {
+  requestAnimationFrame(loop);
+});
