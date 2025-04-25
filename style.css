@@ -1,25 +1,13 @@
-body {
-  margin: 0;
-  overflow: hidden;
-  background: #222;
-}
-
-#game {
-  position: relative;
-  width: 800px;
-  height: 600px;
-  margin: 20px auto;
-  background-color: #444;
-  overflow: hidden;
-}
-
 #character {
   position: absolute;
-  width: 48px;
-  height: 64px;
-  background-image: url('idle.png');
+  width: 48px; height: 64px;
+  top: 268px; left: 376px;
   background-repeat: no-repeat;
-  background-position: 0 0;
-  top: 268px;
-  left: 376px;
+  image-rendering: pixelated;
+  transition: none; /* no CSS transitions */
 }
+
+/* Preload all sheets in classes */
+.idle   { background-image: url('idle.png');  }
+.walk   { background-image: url('walk.png');  }
+.run    { background-image: url('run.png');   }
