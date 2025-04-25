@@ -1,6 +1,6 @@
 body {
   margin: 0;
-  background: #222;
+  background: black;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -8,16 +8,7 @@ body {
 }
 
 #game {
-  position: relative;
-  width: 800px;
-  height: 600px;
-  background: #444;
-  overflow: hidden;
-}
-
-#canvas {
-  position: absolute;
-  top: 268px;
-  left: 376px;
+  border: 2px solid white;
+  background: #222;
   image-rendering: pixelated;
 }
