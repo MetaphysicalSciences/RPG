@@ -1,80 +1,84 @@
-const character = document.getElementById("character");
+const character = document.getElementById('character');
+let pos = { x: 376, y: 268 };
+let keys = { ArrowUp:0, ArrowDown:0, ArrowLeft:0, ArrowRight:0, Shift:0 };
 
-let posX = 376;
-let posY = 268;
-let frame = 0;
-let direction = 0; // 0: down, 1: left, 2: right, 3: up
-let currentAction = "idle";
-let frameCount = 0;
-
-const spriteSize = { width: 48, height: 64 };
-const speed = {
-  walk: 2,
-  run: 4
+let state = {
+  action: 'idle',    // 'idle' | 'walk' | 'run'
+  direction: 0,      // 0=down,1=left,2=right,3=up
+  frame: 0,
+  lastAction: null
 };
 
-const keys = {
-  ArrowUp: false,
-  ArrowDown: false,
-  ArrowLeft: false,
-  ArrowRight: false,
-  Shift: false
-};
+const SPRITE = { w:48, h:64, framesPerRow:6 };
+const SPEED  = { walk:2, run:4 };
 
-function updateSprite() {
-  let spriteSheet = `${currentAction}.png`;
-  character.style.backgroundImage = `url('${spriteSheet}')`;
-  character.style.backgroundPosition = `-${frame * spriteSize.width}px -${direction * spriteSize.height}px`;
-}
-
-function moveCharacter() {
-  let dx = 0;
-  let dy = 0;
-
-  currentAction = "idle";
-
-  if (keys.ArrowUp) {
-    dy = -1;
-    direction = 3;
-    currentAction = keys.Shift ? "run" : "walk";
-  } else if (keys.ArrowDown) {
-    dy = 1;
-    direction = 0;
-    currentAction = keys.Shift ? "run" : "walk";
-  }
-
-  if (keys.ArrowLeft) {
-    dx = -1;
-    direction = 1;
-    currentAction = keys.Shift ? "run" : "walk";
-  } else if (keys.ArrowRight) {
-    dx = 1;
-    direction = 2;
-    currentAction = keys.Shift ? "run" : "walk";
-  }
-
-  let moveSpeed = currentAction === "run" ? speed.run : (currentAction === "walk" ? speed.walk : 0);
-
-  posX += dx * moveSpeed;
-  posY += dy * moveSpeed;
-
-  character.style.left = posX + "px";
-  character.style.top = posY + "px";
-
-  frameCount++;
-  if (frameCount % 10 === 0) {
-    frame = (frame + 1) % 6;
-  }
-
-  updateSprite();
-}
-
-setInterval(moveCharacter, 1000 / 60);
-
-document.addEventListener("keydown", (e) => {
-  if (keys.hasOwnProperty(e.key)) keys[e.key] = true;
+// handle key events
+document.addEventListener('keydown', e => {
+  if (e.key in keys) keys[e.key] = 1;
+});
+document.addEventListener('keyup', e => {
+  if (e.key in keys) keys[e.key] = 0;
 });
 
-document.addEventListener("keyup", (e) => {
-  if (keys.hasOwnProperty(e.key)) keys[e.key] = false;
-});
+// animation timer: advance frame every 100ms
+setInterval(() => {
+  state.frame = (state.frame + 1) % SPRITE.framesPerRow;
+  drawSprite();
+}, 100);
+
+function updateState() {
+  // decide movement vector
+  let dx = (keys.ArrowRight - keys.ArrowLeft);
+  let dy = (keys.ArrowDown  - keys.ArrowUp);
+
+  // determine direction (priority: horizontal over vertical)
+  if      (dx > 0) state.direction = 2;
+  else if (dx < 0) state.direction = 1;
+  else if (dy > 0) state.direction = 0;
+  else if (dy < 0) state.direction = 3;
+
+  // decide action
+  let moving = dx !== 0 || dy !== 0;
+  let want   = moving
+             ? (keys.Shift ? 'run' : 'walk')
+             : 'idle';
+
+  // on action-change, reset frame
+  if (want !== state.action) {
+    state.action = want;
+    state.frame  = 0;
+  }
+
+  // apply movement
+  let spd = moving
+          ? SPEED[state.action]
+          : 0;
+  pos.x += dx * spd;
+  pos.y += dy * spd;
+
+  // clamp inside game area (800×600 minus sprite size)
+  pos.x = Math.max(0, Math.min(800 - SPRITE.w, pos.x));
+  pos.y = Math.max(0, Math.min(600 - SPRITE.h, pos.y));
+}
+
+function drawSprite() {
+  // update position
+  character.style.left = pos.x + 'px';
+  character.style.top  = pos.y + 'px';
+
+  // swap CSS class
+  character.className = state.action;
+
+  // compute background-position
+  let x = -state.frame * SPRITE.w;
+  let y = -state.direction * SPRITE.h;
+  character.style.backgroundPosition = `${x}px ${y}px`;
+}
+
+// main game loop: 60fps movement + redraw
+function gameLoop() {
+  updateState();
+  drawSprite();
+  requestAnimationFrame(gameLoop);
+}
+requestAnimationFrame(gameLoop);
