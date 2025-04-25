@@ -1,13 +1,23 @@
 #character {
   position: absolute;
-  width: 48px; height: 64px;
-  top: 268px; left: 376px;
+  width: 48px;
+  height: 64px;
+  top: 268px;
+  left: 376px;
   background-repeat: no-repeat;
   image-rendering: pixelated;
   transition: none; /* no CSS transitions */
 }
 
-/* Preload all sheets in classes */
-.idle   { background-image: url('idle.png');  }
-.walk   { background-image: url('walk.png');  }
-.run    { background-image: url('run.png');   }
+/* Preload all sheets in classes for each direction */
+.idle-down   { background-image: url('idle.png');   background-position: 0 0; }
+.walk-down   { background-image: url('walk.png');   background-position: 0 0; }
+
+.idle-left   { background-image: url('idle.png');   background-position: 0 -64px; }
+.walk-left   { background-image: url('walk.png');   background-position: 0 -64px; }
+
+.idle-right  { background-image: url('idle.png');   background-position: 0 -128px; }
+.walk-right  { background-image: url('walk.png');   background-position: 0 -128px; }
+
+.idle-up     { background-image: url('idle.png');   background-position: 0 -192px; }
+.walk-up     { background-image: url('walk.png');   background-position: 0 -192px; }
