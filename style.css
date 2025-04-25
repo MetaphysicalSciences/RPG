@@ -1,0 +1,25 @@
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #222;
+}
+
+#game {
+  position: relative;
+  width: 800px;
+  height: 600px;
+  margin: 20px auto;
+  background-color: #444;
+  overflow: hidden;
+}
+
+#character {
+  position: absolute;
+  width: 48px;
+  height: 64px;
+  background-image: url('idle.png');
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  top: 268px;
+  left: 376px;
+}
